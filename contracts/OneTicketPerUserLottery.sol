@@ -7,7 +7,7 @@ import "./FakeRandomness.sol";
 import "./LotteryToken.sol";
 import "./NFTTicket.sol";
 
-contract OneTicketPerUserLottery is Ownable{
+contract OneTicketPerUserLottery is Ownable {
 
     NFTTicket nft;
     LotteryToken token;
@@ -88,6 +88,9 @@ contract OneTicketPerUserLottery is Ownable{
 
     function isWinner() public view returns (bool) {
         require(tickets[msg.sender].ticketNumber != 0, "You did not participate in the lottery!");
+        require(lottery.status == Status.Closed, "Lottery isn't completed yet");
+        require(random.randomResult() != 0, "Wait a little bit, winning tickets are being generated");
+
         uint256 coinFlip = uint256(keccak256(abi.encode(random.randomResult, tickets[msg.sender]))) % lottery.totalTicketsAmount;
         if (coinFlip < lottery.winningTicketsAmount) {
             return true;
