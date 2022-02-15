@@ -32,9 +32,9 @@ contract OneTicketPerUserLottery is Ownable {
         bool alreadyWithdrawedReward;
     }
 
-    LotteryInfo lottery;
+    LotteryInfo public lottery;
 
-    mapping(address => UserInfo) tickets;
+    mapping(address => UserInfo) public tickets;
 
     constructor(uint256 _winningTicketsAmount, 
                 uint256 _totalTicketsAmount, 
@@ -56,6 +56,7 @@ contract OneTicketPerUserLottery is Ownable {
     // 1 LotteryToken = 1 NFTTicket
     function buyTicket(uint256 _ticketId) external {
         require(lottery.status == Status.Started, "Purchase stage is over");
+        require(token.balanceOf(msg.sender) >= 1, "Not enough balance to buy ticket");
         require(nft.balanceOf(msg.sender) == 0, "It's allowed to buy only one ticket");
         require(_ticketId > 0 && _ticketId <= lottery.totalTicketsAmount, "Incorrect number of ticket");
         require(lottery.purchasedTickets < lottery.totalTicketsAmount, "All tickets are already sold");
@@ -96,5 +97,9 @@ contract OneTicketPerUserLottery is Ownable {
             return true;
         }
         return false;
+    }
+
+    function viewTicketNumber(address _account) external view returns (uint256) {
+        return tickets[_account].ticketNumber;
     }
 }

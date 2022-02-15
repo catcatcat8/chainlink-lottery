@@ -1,3 +1,5 @@
+const { ethers } = require("ethers");
+
 async function main() {
     [owner, user1, user2, user3, user4] = await ethers.getSigners();
     console.log("Deploying contracts with the account:", owner.address);
@@ -14,17 +16,17 @@ async function main() {
     fakeRandomness = await FakeRandomness.deploy();
     await fakeRandomness.deployed();
 
-    OneTicketPerUserLottery = await ethers.getContractFactory("OneTicketPerUserLottery");
-    oneTicketPerUserLottery = await OneTicketPerUserLottery.deploy(2, 4, 10, nftTicket.address, lotteryToken.address, fakeRandomness.address);
-    await oneTicketPerUserLottery.deployed();
+    OneWinPerUserLottery = await ethers.getContractFactory("OneWinPerUserLottery");
+    oneWinPerUserLottery = await OneWinPerUserLottery.deploy(5, 10, 10, nftTicket.address, lotteryToken.address, fakeRandomness.address);
+    await oneWinPerUserLottery.deployed();
 
-    await nftTicket.grantMinterRole(oneTicketPerUserLottery.address);
-    await lotteryToken.grantBurnerRole(oneTicketPerUserLottery.address);
+    await nftTicket.grantMinterRole(oneWinPerUserLottery.address);
+    await lotteryToken.grantBurnerRole(oneWinPerUserLottery.address);
   
     console.log("NFTTicket address:", nftTicket.address);
     console.log("LotteryToken address:", lotteryToken.address);
     console.log("FakeRandomness address:", fakeRandomness.address);
-    console.log("OneTicketPerUserLottery address:", oneTicketPerUserLottery.address);
+    console.log("OneWinPerUserLottery address:", oneWinPerUserLottery.address);
   }
   
   main()

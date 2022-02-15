@@ -23,15 +23,16 @@ contract OneWinPerUserLottery is Ownable {
         Status status;
         uint256 winningTicketsAmount;
         uint256 totalTicketsAmount;
-        uint256[] purchasedTickets;
         uint256 rewardPerWinner;
         address contractOwner;
-        mapping(uint256 => bool) winningTickets;
 
         // Because of admin can generate only 10 winning tickets at once
         uint256 winningTicketsDrawnAlready;
         uint256 lastRandomNumber;
     }
+
+    uint256[] public purchasedTickets;
+    mapping(uint256 => bool) public winningTickets;
 
     struct UserInfo {
         uint256[] ticketNumbers;
@@ -43,9 +44,9 @@ contract OneWinPerUserLottery is Ownable {
         uint256 ticketNumber;
     }
 
-    LotteryInfo lottery;
+    LotteryInfo public lottery;
 
-    mapping(address => UserInfo) tickets;
+    mapping(address => UserInfo) public tickets;
 
     /**
      * Is needed because drawWinningNumbers() can generate the same winning numbers
@@ -74,14 +75,15 @@ contract OneWinPerUserLottery is Ownable {
     function buyTickets(uint256[] memory _ticketsId) external {
         require(lottery.status == Status.Started, "Purchase stage is over");
         require(_ticketsId.length <= 10, "It's not allowed to buy more than 10 tickets at once");
-        require(lottery.purchasedTickets.length + _ticketsId.length <= lottery.totalTicketsAmount, 
-                "You can't buy so many tickets, check 'leftTicketsAmount function'");
+        require(purchasedTickets.length + _ticketsId.length <= lottery.totalTicketsAmount, 
+                "You can't buy so many tickets");
+        require(token.balanceOf(msg.sender) >= _ticketsId.length, "Not enough balance to buy tickets");
 
         for (uint256 i = 0; i < _ticketsId.length; i++) {
             require(_ticketsId[i] > 0 && _ticketsId[i] <= lottery.totalTicketsAmount, "Incorrect number of ticket");
             nft.mint(msg.sender, _ticketsId[i]);
             tickets[msg.sender].ticketNumbers.push(_ticketsId[i]);
-            lottery.purchasedTickets.push(_ticketsId[i]);
+            purchasedTickets.push(_ticketsId[i]);
 
             UserTickets memory ut = UserTickets(msg.sender, _ticketsId[i]);
             userTickets.push(ut);
@@ -91,7 +93,7 @@ contract OneWinPerUserLottery is Ownable {
 
     function closeLottery() external onlyOwner() {
         require(lottery.status == Status.Started, "Purchase stage is over");
-        require(lottery.purchasedTickets.length == lottery.totalTicketsAmount, "Not all tickets have been purchased yet");
+        require(purchasedTickets.length == lottery.totalTicketsAmount, "Not all tickets have been purchased yet");
         // Before to call "closeLottery" contract owner should call token.approve(lottery contract, all contract_owner's tokens)
         require(token.allowance(lottery.contractOwner, address(this)) == token.balanceOf(lottery.contractOwner));
 
@@ -121,7 +123,7 @@ contract OneWinPerUserLottery is Ownable {
             userTickets[winningIndex] = userTickets[userTickets.length-1];
             userTickets.pop();
 
-            lottery.winningTickets[winningTicket] = true;
+            winningTickets[winningTicket] = true;
 
             currentRandom = newRandom;
         }
@@ -138,7 +140,7 @@ contract OneWinPerUserLottery is Ownable {
         require(lottery.status == Status.Completed, "Lottery isn't completed yet");
         require(nft.ownerOf(_ticketId) == msg.sender, "You are not the owner of this ticket");
         require(!tickets[msg.sender].alreadyWithdrawedReward, "You have already withdrawed the reward");
-        require(lottery.winningTickets[_ticketId], "This ticket is not the winning ticket, check your winning tickets using isWinnerAndWinningTickets()");
+        require(winningTickets[_ticketId], "This ticket is not the winning ticket, check your winning tickets using isWinnerAndWinningTickets()");
 
         token.transferFrom(lottery.contractOwner, msg.sender, lottery.rewardPerWinner);
         tickets[msg.sender].alreadyWithdrawedReward = true;
@@ -147,17 +149,17 @@ contract OneWinPerUserLottery is Ownable {
     /**
      * @notice Returns true and the array of winning tickets (except zeros in this array) if you win, otherwise returns false and the array of zeros
      */
-    function isWinnerAndWinningTickets(uint256[] memory _tickets) public view returns (bool, uint256[] memory) {
+    function isWinnerAndWinningTickets() public view returns (bool, uint256[] memory) {
         require(tickets[msg.sender].ticketNumbers.length != 0, "You did not participate in the lottery!");
         require(lottery.status == Status.Completed, "Lottery isn't completed yet");
 
-        uint256[] memory wins = new uint256[](_tickets.length);
+        uint256[] memory myTickets = viewTicketNumbers(msg.sender);
+        uint256[] memory wins = new uint256[](myTickets.length);
         uint256 b = 0;
         bool isWin;
-        for (uint256 i=0; i<_tickets.length; i++) {
-            require(nft.ownerOf(_tickets[i]) == msg.sender, "Some of tickets are not yours");
-            if (lottery.winningTickets[_tickets[i]]) {
-                wins[b] = _tickets[i];
+        for (uint256 i=0; i<myTickets.length; i++) {
+            if (winningTickets[myTickets[i]]) {
+                wins[b] = myTickets[i];
                 b++;
                 if (!isWin) {
                     isWin = true;
@@ -168,5 +170,26 @@ contract OneWinPerUserLottery is Ownable {
             return (true, wins);
         }
         return (false, wins);
+    }
+
+    function viewTicketNumbers(address _account) public view returns (uint256[] memory) {
+        return tickets[_account].ticketNumbers;
+    }
+
+    function viewPurchasedTickets() external view returns (uint256[] memory) {
+        return purchasedTickets;
+    }
+
+    function viewWinningTickets() external view returns (uint256[] memory) {
+        require(lottery.status == Status.Completed);
+        uint256[] memory _winningTickets = new uint256[](lottery.winningTicketsAmount);
+        uint256 b = 0;
+        for(uint256 i=0; i<=lottery.totalTicketsAmount; i++) {
+            if (winningTickets[i] == true) {
+                _winningTickets[b] = i;
+                b++;
+            }
+        }
+        return _winningTickets;
     }
 }

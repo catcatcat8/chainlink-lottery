@@ -10,7 +10,7 @@ contract FakeRandomness {
     }
 
     function getRandomNumber() public {
-        randomResult = uint256(block.difficulty);
+        randomResult = uint256(block.timestamp);
     }
 
     // Getting multiple random numbers

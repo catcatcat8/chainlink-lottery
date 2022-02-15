@@ -1,4 +1,5 @@
 require("@nomiclabs/hardhat-waffle");
+require('solidity-coverage');
 
 const ALCHEMY_API_KEY = "dN-Txf6ainhoZw1TJMp4w6PGfiBL41P5";
 const RINKEBY_PRIVATE_KEY = "88c2c91c9080ce27ef8acbcbe4cf13b8be9367c29a04e82e183d5044808a916c";
