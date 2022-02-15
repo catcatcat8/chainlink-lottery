@@ -111,16 +111,6 @@ contract MultiWinPerUserLottery is Ownable {
                 }
             }
         }
-
-        for (uint256 i=0; i<_tickets.length; i++) {
-            if (winningTickets[_tickets[i]] &&  // This ticket is the winning ticket  
-                nft.ownerOf(_tickets[i]) == msg.sender &&  // You are owner of this ticket
-                !alreadyWithdrawedRewardPerTicket[msg.sender][_tickets[i]])  // You haven't already withdrawed the reward for this ticket
-            {
-                token.transferFrom(lottery.contractOwner, msg.sender, lottery.rewardPerTicket);
-                alreadyWithdrawedRewardPerTicket[msg.sender][_tickets[i]] = true;
-            }
-        }
     }
 
     /**
