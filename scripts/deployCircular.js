@@ -14,17 +14,17 @@ async function main() {
     randomness = await Randomness.deploy();
     await randomness.deployed();
 
-    OneWinPerUserLottery = await ethers.getContractFactory("OneWinPerUserLottery");
-    oneWinPerUserLottery = await OneWinPerUserLottery.deploy(5, 10, 10, nftTicket.address, lotteryToken.address, randomness.address);
-    await oneWinPerUserLottery.deployed();
+    CircularLottery = await ethers.getContractFactory("CircularLottery");
+    circularLottery = await CircularLottery.deploy(5, 10, 10, nftTicket.address, lotteryToken.address, randomness.address);
+    await circularLottery.deployed();
 
-    await nftTicket.grantMinterRole(oneWinPerUserLottery.address);
-    await lotteryToken.grantBurnerRole(oneWinPerUserLottery.address);
+    await nftTicket.grantMinterRole(circularLottery.address);
+    await lotteryToken.grantBurnerRole(circularLottery.address);
   
     console.log("NFTTicket address:", nftTicket.address);
     console.log("LotteryToken address:", lotteryToken.address);
     console.log("Randomness address:", randomness.address);
-    console.log("OneWinPerUserLottery address:", oneWinPerUserLottery.address);
+    console.log("CircularLottery address:", circularLottery.address);
   }
   
   main()
@@ -35,7 +35,7 @@ async function main() {
     });
 
 // Deploying contracts with the account: 0x3Ba6810768c2F4FD3Be2c5508E214E68B514B35f
-// NFTTicket address: 0x682f50627D9dbCDD49B2932717AA4204b9F20C89
-// LotteryToken address: 0x53656A51858c0d4749C574d8936F2636924ac752
-// Randomness address: 0xE172e3F590dD501B987781f096AE0c270B17853C
-// OneWinPerUserLottery address: 0x18d8EC0C11210aB579eB70f6a42C5142cd3Ec02F
+// NFTTicket address: 0x6Bfd39a71B819b8016Dd839793445672E6D885B6
+// LotteryToken address: 0x4DA72CFAb437F21bC01B4483585B9063e5AfBB82
+// Randomness address: 0x683a092EE655A0fF73fAd1666d8885905Df54976
+// CircularLottery address: 0xA54f2DC9D0a82a618816B11B1B5aD847E9aD8772

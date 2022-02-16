@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./FakeRandomness.sol";
+import "./Randomness.sol";
 import "./LotteryToken.sol";
 import "./NFTTicket.sol";
 
@@ -11,7 +11,7 @@ contract OneTicketPerUserLottery is Ownable {
 
     NFTTicket nft;
     LotteryToken token;
-    FakeRandomness random;
+    Randomness random;
 
     enum Status {
         Started,
@@ -50,7 +50,7 @@ contract OneTicketPerUserLottery is Ownable {
 
         nft = NFTTicket(_nftAddress);
         token = LotteryToken(_tokenAddress);
-        random = FakeRandomness(_randomAddress);
+        random = Randomness(_randomAddress);
     }
 
     // 1 LotteryToken = 1 NFTTicket

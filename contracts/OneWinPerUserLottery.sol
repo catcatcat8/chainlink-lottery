@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./FakeRandomness.sol";
+import "./Randomness.sol";
 import "./LotteryToken.sol";
 import "./NFTTicket.sol";
 
@@ -11,7 +11,7 @@ contract OneWinPerUserLottery is Ownable {
 
     NFTTicket nft;
     LotteryToken token;
-    FakeRandomness random;
+    Randomness random;
 
     enum Status {
         Started,
@@ -68,7 +68,7 @@ contract OneWinPerUserLottery is Ownable {
 
         nft = NFTTicket(_nftAddress);
         token = LotteryToken(_tokenAddress);
-        random = FakeRandomness(_randomAddress);
+        random = Randomness(_randomAddress);
     }
 
     // 1 LotteryToken = 1 NFTTicket
@@ -147,29 +147,41 @@ contract OneWinPerUserLottery is Ownable {
     }
 
     /**
-     * @notice Returns true and the array of winning tickets (except zeros in this array) if you win, otherwise returns false and the array of zeros
+     * @notice Returns true and the array of winning tickets if you win, otherwise returns false and the empty array
      */
     function isWinnerAndWinningTickets() public view returns (bool, uint256[] memory) {
         require(tickets[msg.sender].ticketNumbers.length != 0, "You did not participate in the lottery!");
         require(lottery.status == Status.Completed, "Lottery isn't completed yet");
 
+        uint256 count = countUserWinningTickets();
+        if (count == 0) {
+            uint256[] memory winTickets;
+            return (false, winTickets);
+        }
         uint256[] memory myTickets = viewTicketNumbers(msg.sender);
-        uint256[] memory wins = new uint256[](myTickets.length);
+        uint256[] memory wins = new uint256[](count);
         uint256 b = 0;
-        bool isWin;
         for (uint256 i=0; i<myTickets.length; i++) {
             if (winningTickets[myTickets[i]]) {
                 wins[b] = myTickets[i];
                 b++;
-                if (!isWin) {
-                    isWin = true;
-                }
             }
         }
-        if (isWin) {
-            return (true, wins);
+        return (true, wins);
+    }
+
+    /**
+     * @notice Returning count of the array except zeroes for creating dynamic array
+     */
+    function countUserWinningTickets() internal view returns (uint256){
+        uint256[] memory myTickets = viewTicketNumbers(msg.sender);
+        uint256 count = 0;
+        for (uint256 i=0; i<myTickets.length; i++) {
+            if (winningTickets[myTickets[i]]) {
+                count++;
+            }
         }
-        return (false, wins);
+        return count;
     }
 
     function viewTicketNumbers(address _account) public view returns (uint256[] memory) {

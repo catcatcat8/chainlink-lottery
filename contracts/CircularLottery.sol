@@ -3,15 +3,15 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./FakeRandomness.sol";
+import "./Randomness.sol";
 import "./LotteryToken.sol";
 import "./NFTTicket.sol";
 
-contract MultiWinPerUserLottery is Ownable {
+contract CircularLottery is Ownable {
 
     NFTTicket nft;
     LotteryToken token;
-    FakeRandomness random;
+    Randomness random;
 
     enum Status {
         Started,
@@ -47,7 +47,7 @@ contract MultiWinPerUserLottery is Ownable {
 
         nft = NFTTicket(_nftAddress);
         token = LotteryToken(_tokenAddress);
-        random = FakeRandomness(_randomAddress);
+        random = Randomness(_randomAddress);
     }
 
     // 1 LotteryToken = 1 NFTTicket
@@ -121,8 +121,13 @@ contract MultiWinPerUserLottery is Ownable {
         require(lottery.status == Status.Closed, "Lottery isn't completed yet");
         require(random.randomResult() != 0, "Random hasn't been generated yet");
 
+        uint256 count = countUserWinningTickets();
+        if (count == 0) {
+            uint256[] memory winTickets;
+            return (false, winTickets);
+        }
         uint256[] memory myTickets = viewTicketNumbers(msg.sender);
-        uint256[] memory wins = new uint256[](myTickets.length);
+        uint256[] memory wins = new uint256[](count);
 
         uint256 firstWinTicket = random.randomResult() % lottery.totalTicketsAmount + 1;
         bool moreThenLastTicket = true;  // last winning ticket is more then last ticket, for ex. firstWinTicket = 5, total = 7, amountWin = 4
@@ -131,16 +136,12 @@ contract MultiWinPerUserLottery is Ownable {
         }
 
         uint256 b = 0;
-        bool isWin = false;
         for (uint256 i=0; i<myTickets.length; i++) {
             if (!moreThenLastTicket) {  // for example 96, 97, 98, 99, 100
                 if ((myTickets[i] >= firstWinTicket) && 
                     (myTickets[i] <= firstWinTicket + lottery.winningTicketsAmount - 1)) {  // win condition
                     wins[b] = myTickets[i];
                     b++;
-                    if (!isWin) {
-                        isWin = true;
-                    }
                 }
             }
             else {  // for example 98, 99, 100, 1, 2
@@ -148,16 +149,40 @@ contract MultiWinPerUserLottery is Ownable {
                     (myTickets[i] <= (firstWinTicket + lottery.winningTicketsAmount - 1) % lottery.totalTicketsAmount)) {  // win condition
                     wins[b] = myTickets[i];
                     b++;
-                    if (!isWin) {
-                        isWin = true;
-                    }
                 }
             }
         }
-        if (isWin) {
-            return (true, wins);
+        return(true, wins);
+    }
+
+    /**
+     * @notice Returning count of winning tickets for creating dynamic array
+     */
+    function countUserWinningTickets() internal view returns (uint256){
+        uint256[] memory myTickets = viewTicketNumbers(msg.sender);
+        uint256 count = 0;
+
+        uint256 firstWinTicket = random.randomResult() % lottery.totalTicketsAmount + 1;
+        bool moreThenLastTicket = true;  // last winning ticket is more then last ticket, for ex. firstWinTicket = 5, total = 7, amountWin = 4
+        if (firstWinTicket < (firstWinTicket + lottery.winningTicketsAmount - 1) % (lottery.totalTicketsAmount + 1)) {
+            moreThenLastTicket = false;
         }
-        return (false, wins);
+
+        for (uint256 i=0; i<myTickets.length; i++) {
+            if (!moreThenLastTicket) {  // for example 96, 97, 98, 99, 100
+                if ((myTickets[i] >= firstWinTicket) && 
+                    (myTickets[i] <= firstWinTicket + lottery.winningTicketsAmount - 1)) {  // win condition
+                    count++;
+                }
+            }
+            else {  // for example 98, 99, 100, 1, 2
+                if ((myTickets[i] >= firstWinTicket) || 
+                    (myTickets[i] <= (firstWinTicket + lottery.winningTicketsAmount - 1) % lottery.totalTicketsAmount)) {  // win condition
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     function viewTicketNumbers(address _account) public view returns (uint256[] memory) {

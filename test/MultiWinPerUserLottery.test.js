@@ -216,6 +216,7 @@ describe("MultiWinPerUserLottery tests", function() {
                     expect(await lotteryToken.balanceOf(users[i].address)).to.equal(parseInt(userBalances[i]) + parseInt(reward));
                 }
             }
+            await expect(multiWinPerUserLottery.connect(user1).getReward([20])).to.be.revertedWith("This ticket is not the winning ticket");
 
             for (let i = 0; i < 5; i++) {
                 userBalances[i] = await lotteryToken.balanceOf(users[i].address);
@@ -225,11 +226,21 @@ describe("MultiWinPerUserLottery tests", function() {
                 if ((await multiWinPerUserLottery.connect(users[i]).isWinnerAndWinningTickets())[0] == true) {
                     let winTickets = (await multiWinPerUserLottery.connect(users[i]).isWinnerAndWinningTickets())[1];
                     if (winTickets.length > 1) {
-                        if ((await multiWinPerUserLottery.connect(users[i]).isWinnerAndWinningTickets())[1][1] != 0) {
-                            let winTicket = (await multiWinPerUserLottery.connect(users[i]).isWinnerAndWinningTickets())[1][1];
-                            await multiWinPerUserLottery.connect(users[i]).getReward([winTicket]);
-                            expect(await lotteryToken.balanceOf(users[i].address)).to.equal(parseInt(userBalances[i]) + parseInt(reward));
-                        }
+                        let notWithdrawRewardAlready = winTickets.slice(1);
+                        await multiWinPerUserLottery.connect(users[i]).getReward(notWithdrawRewardAlready);
+                        expect(await lotteryToken.balanceOf(users[i].address)).to.equal(
+                            parseInt(userBalances[i]) + parseInt(reward) * notWithdrawRewardAlready.length);
+                    }
+                }
+            }
+
+            for (let i = 0; i < 5; i++) {
+                if ((await multiWinPerUserLottery.connect(users[i]).isWinnerAndWinningTickets())[0] == true) {
+                    let winTickets = (await multiWinPerUserLottery.connect(users[i]).isWinnerAndWinningTickets())[1];
+                    if (winTickets.length > 1) {
+                        let notWithdrawRewardAlready = winTickets.slice(1);
+                        await expect(multiWinPerUserLottery.connect(users[i]).getReward(notWithdrawRewardAlready)).
+                        to.be.revertedWith("You have already withdrawed the reward for this ticket");
                     }
                 }
             }
