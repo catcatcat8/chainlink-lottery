@@ -1,4 +1,4 @@
-# Multiwin chainlink lottery
+# Multiwin chainlink lottery collection
 
 This project is a multi-ticket multi-winning lottery using random winning numbers from Chainlink.
 
