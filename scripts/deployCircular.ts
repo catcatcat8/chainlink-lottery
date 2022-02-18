@@ -1,21 +1,23 @@
+import { ethers } from 'hardhat'
+
 async function main() {
-    [owner, user1, user2, user3, user4] = await ethers.getSigners();
+    const [owner, user1, user2, user3, user4, ...users] = await ethers.getSigners();
     console.log("Deploying contracts with the account:", owner.address);
 
-    NFTTicket = await ethers.getContractFactory("NFTTicket");
-    nftTicket = await NFTTicket.deploy();
+    const NFTTicket = await ethers.getContractFactory("NFTTicket");
+    let nftTicket = await NFTTicket.deploy();
     await nftTicket.deployed();
 
-    LotteryToken = await ethers.getContractFactory("LotteryToken");
-    lotteryToken = await LotteryToken.deploy();
+    const LotteryToken = await ethers.getContractFactory("LotteryToken");
+    let lotteryToken = await LotteryToken.deploy();
     await lotteryToken.deployed();
 
-    Randomness = await ethers.getContractFactory("Randomness");
-    randomness = await Randomness.deploy();
+    const Randomness = await ethers.getContractFactory("Randomness");
+    let randomness = await Randomness.deploy();
     await randomness.deployed();
 
-    CircularLottery = await ethers.getContractFactory("CircularLottery");
-    circularLottery = await CircularLottery.deploy(5, 10, 10, nftTicket.address, lotteryToken.address, randomness.address);
+    const CircularLottery = await ethers.getContractFactory("CircularLottery");
+    let circularLottery = await CircularLottery.deploy(5, 10, 10, nftTicket.address, lotteryToken.address, randomness.address);
     await circularLottery.deployed();
 
     await nftTicket.grantMinterRole(circularLottery.address);

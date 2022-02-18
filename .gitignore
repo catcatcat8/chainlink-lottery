@@ -4,3 +4,5 @@ cache
 coverage
 coverage.json
 secret.json
+typechain-types
+build
